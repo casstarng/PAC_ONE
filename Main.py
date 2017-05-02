@@ -8,21 +8,33 @@ def mainPrompt():
           '\n1 - Find the number of flights coming from a specific state'
           '\n2 - Lists the months and the average departure delay experienced in those months'
           '\n3 - Find the average flight time from flights between certain airports'
-          '\n4 - Find all airport codes in a certain state')
+          '\n4 - Find all airport codes in a certain state'
+          '\n5 - Find the probability that a flight going to an airport will be cancelled'
+          '\n6 - Find the average departure delay of a certain airport'
+          '\n7 - Find the average arrival delay time for a certain flight carrier')
     print()
     userValue = input('Enter your choice here: ')
     if userValue == '1':
         value = input('What state would you like to see? ')
         numOfFlightsFromState(value)
-    if userValue == '2':
+    elif userValue == '2':
         getAverageDepartureDelayPerMonth()
-    if userValue == '3':
+    elif userValue == '3':
         origin = input('Origin: ')
         destination = input('Destination: ')
         averageFlightTimeBetweenAirports(origin, destination)
-    if userValue == '4':
+    elif userValue == '4':
         state = input('What state would you like to see? ')
         getAirportCodesInState(state)
+    elif userValue == '5':
+        airport = input('What airport would you like to see? ')
+        probabilityOfCancellation(airport)
+    elif userValue == '6':
+        airport = input('What airport would you like to see? ')
+        averageDepartureDelayAtAirport(airport)
+    elif userValue == '7':
+        carrier = input('What carrier would you like to see? ')
+        averageDelayTimePerFlightCarrier(carrier)
 
 # Find the number of flights coming from a specific state
 def numOfFlightsFromState(state):
@@ -50,5 +62,22 @@ def getAirportCodesInState(state):
     print('-------------------------')
     for result in results:
         print("%-5s| %s" % (result['_id']['origin'], result['_id']['city']))
+
+# Find the probability that a flight going to a certain airport will be cancelled
+def probabilityOfCancellation(airport):
+    results = collection.aggregate([{'$match': {"DEST": airport}},{'$group':{'_id': "$DEST", 'chance_of_cancellation': {'$avg': "$CANCELLED"}}}])
+    for result in results:
+        print("The probability that a flight going to %s will be cancelled is %.4f or %2.2f percent" % (airport, result['chance_of_cancellation'], result['chance_of_cancellation'] * 100.0))
+
+# Find the average departure delay of a certain airport
+def averageDepartureDelayAtAirport(airport):
+    results = collection.aggregate([{'$match': {"ORIGIN": airport}}, {'$group': {'_id': "$ORIGIN",'average_departure_delay': { '$avg': "$DEP_DELAY"}}}])
+    for result in results:
+        print("The average departure delay from %s is %.2 minutes" % (airport, result['average_departure_delay']))
+
+def averageDelayTimePerFlightCarrier(carrier):
+    results = collection.aggregate([{'$match': {"CARRIER": carrier}},{'$group':{'_id': "$CARRIER",'average_arrival_delay': { '$avg': "$ARR_DELAY" }}}])
+    for result in results:
+        print("The average delay time of %s is %2.2f minutes" % (carrier, result['average_arrival_delay']))
 
 mainPrompt()
