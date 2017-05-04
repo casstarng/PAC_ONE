@@ -152,17 +152,15 @@ def averageLateAircraftDelayFromCarrier(carrier, year):
 
 # Find the month and delay with the longest delay given a year
 def findTheMonthWithTheLongestDelayGivenAYear(year):
-    results = collection.aggregate([{'$match': {"YEAR": int(year)}}, {'$group':{'_id': "$MONTH",'delay': { '$avg': "$ARR_DELAY" }}}, {'$sort': {'delay': -1}}])
+    results = collection.aggregate([{'$match': {"YEAR": int(year)}}, {'$group':{'_id': "$MONTH",'delay': { '$avg': "$ARR_DELAY" }}}, {'$sort': {'delay': -1}}, {'$limit': 1}])
     for result in results:
         print("The month with the longest delays in %s was month %s at %.2f minutes of delay" % (year, result['_id'], result['delay']))
-        break
 
 # Finds the destination state that most flights go to given an origin state
 def findMostTraveledStateFromGivenState(state):
-    results = collection.aggregate([{'$match': {"ORIGIN_STATE_NM": state}}, {'$group':{'_id': {'origin': "$ORIGIN_STATE_NM", 'dest': "$DEST_STATE_NM"}, 'count': { '$sum': 1}}}, {'$sort': {'count': -1}}])
+    results = collection.aggregate([{'$match': {"ORIGIN_STATE_NM": state}}, {'$group':{'_id': {'origin': "$ORIGIN_STATE_NM", 'dest': "$DEST_STATE_NM"}, 'count': { '$sum': 1}}}, {'$sort': {'count': -1}}, {'$limit': 1}])
     for result in results:
         print("The state with the most flights from %s is %s with a number of %d flights" % (state, result['_id']['dest'], result['count']))
-        break
 
 # List the month and the carrier with the most amount of flights cancelled in a given year
 def listMonthAndCarrierOfMostCancelledFlights(year):
