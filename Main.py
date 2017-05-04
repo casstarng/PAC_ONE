@@ -70,7 +70,7 @@ def averageFlightTimeBetweenAirports(origin, destination):
 
 # Find all airport codes in a certain state
 def getAirportCodesInState(state):
-    results = collection.aggregate([ {'$match': {"ORIGIN_STATE_NM": state}}, {'$group': {'_id': { 'origin' : "$ORIGIN", 'city': "$ORIGIN_CITY_NAME"}} }])
+    results = collection.aggregate([{'$match': {"ORIGIN_STATE_NM": state}}, {'$group': {'_id': { 'origin' : "$ORIGIN", 'city': "$ORIGIN_CITY_NAME"}} }])
     print('Code | City, State')
     print('-------------------------')
     for result in results:
@@ -86,7 +86,7 @@ def probabilityOfCancellation(airport):
 def averageDepartureDelayAtAirport(airport):
     results = collection.aggregate([{'$match': {"ORIGIN": airport}}, {'$group': {'_id': "$ORIGIN",'average_departure_delay': { '$avg': "$DEP_DELAY"}}}])
     for result in results:
-        print("The average departure delay from %s is %.2 minutes" % (airport, result['average_departure_delay']))
+        print("The average departure delay from %s is %.2f minutes" % (airport, result['average_departure_delay']))
 
 # Find the average arrival delay time for a certain flight carrier
 def averageDelayTimePerFlightCarrier(carrier):
