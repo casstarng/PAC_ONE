@@ -14,7 +14,12 @@ def mainPrompt():
           '\n7  - Find the average arrival delay time for a certain flight carrier'
           '\n8  - Lists the months and the average taxi out time in a given airport'
           '\n9  - Find the average delay due to weather when leaving from a certain airport'
-          '\n10 - Find the number of cancelled flights in a given month and year')
+          '\n10 - Find the number of cancelled flights in a given month and year'
+          '\n11 - Find the distance in miles between two airports'
+          '\n12 - Find the average delay due to late aircraft given a specific carrier and year'
+          '\n13 - Find the month and delay with the longest delay given a year'
+          '\n14 - Finds the destination state that most flights go to given an origin state'
+          '\n15 - List the month and the carrier with the most amount of flights cancelled in a given year')
     print()
     userValue = input('Enter your choice here: ')
     if userValue == '1':
@@ -48,6 +53,23 @@ def mainPrompt():
         month = input('Which month? ')
         year = input('Which year? ')
         findNumberOfCancelledFlights(month, year)
+    elif userValue == '11':
+        airport1 = input('From airport: ')
+        airport2 = input('to airport: ')
+        findDistanceBetweenAirports(airport1, airport2)
+    elif userValue == '12':
+        carrier = input('What carrier would you like to see? ')
+        year = input('Which year? ')
+        averageLateAircraftDelayFromCarrier(carrier, year)
+    elif userValue == '13':
+        year = input('Which year? ')
+        findTheMonthWithTheLongestDelayGivenAYear(year)
+    elif userValue == '14':
+        state = input('What state would you like to see? ')
+        findMostTraveledStateFromGivenState(state)
+    elif userValue == '15':
+        year = input('What year would you like to see? ')
+        listMonthAndCarrierOfMostCancelledFlights(year)
 
 # Find the number of flights coming from a specific state
 def numOfFlightsFromState(state):
@@ -115,5 +137,40 @@ def averageWeatherDelayWhenLeaving(airport):
 # Lists the months and number of cancelled flights in a given year
 def findNumberOfCancelledFlights(month, year):
     print('The number of flights cancelled in {}-{} is {} from a total of {} flights'.format(month, year, collection.find({'MONTH': int(month), 'YEAR': int(year), 'CANCELLED': 1}).count(), collection.find({'MONTH': int(month), 'YEAR': int(year)}).count()))
+
+# Find the distance in miles between two airports
+def findDistanceBetweenAirports(airport1, airport2):
+    results = collection.aggregate([{'$match': {"ORIGIN": airport1, "DEST": airport2}}, {'$group': {'_id': "$ORIGIN",'distance': { '$avg': "$DISTANCE"}}}])
+    for result in results:
+            print("The distance between %s and %s is %.0f miles" % (airport1, airport2, result['distance']))
+
+# Find the average delay due to late aircraft given a specific carrier and year
+def averageLateAircraftDelayFromCarrier(carrier, year):
+    results = collection.aggregate([{'$match': {"CARRIER": carrier, "YEAR": int(year)}}, {'$group': {'_id': "$CARRIER",'late_delay': { '$avg': "$NAS_DELAY"}}}])
+    for result in results:
+            print("The average delay due to late aircraft from %s in %s is %.2f minutes" % (carrier, year, result['late_delay']))
+
+# Find the month and delay with the longest delay given a year
+def findTheMonthWithTheLongestDelayGivenAYear(year):
+    results = collection.aggregate([{'$match': {"YEAR": int(year)}}, {'$group':{'_id': "$MONTH",'delay': { '$avg': "$ARR_DELAY" }}}, {'$sort': {'delay': -1}}])
+    for result in results:
+        print("The month with the longest delays in %s was month %s at %.2f minutes of delay" % (year, result['_id'], result['delay']))
+        break
+
+# Finds the destination state that most flights go to given an origin state
+def findMostTraveledStateFromGivenState(state):
+    results = collection.aggregate([{'$match': {"ORIGIN_STATE_NM": state}}, {'$group':{'_id': {'origin': "$ORIGIN_STATE_NM", 'dest': "$DEST_STATE_NM"}, 'count': { '$sum': 1}}}, {'$sort': {'count': -1}}])
+    for result in results:
+        print("The state with the most flights from %s is %s with a number of %d flights" % (state, result['_id']['dest'], result['count']))
+        break
+
+# List the month and the carrier with the most amount of flights cancelled in a given year
+def listMonthAndCarrierOfMostCancelledFlights(year):
+    results = collection.aggregate([{'$match': {"CANCELLED": 1, "YEAR": int(year)}}, {'$group':{'_id': {'month': "$MONTH", 'carrier': "$CARRIER"}, 'count': { '$sum': 1}}}, {'$sort': {'count': -1}}, {'$group': {'_id':'$_id.month', 'carrier':{'$first': '$_id.carrier'},'count':{'$first': '$count'}}}, {'$sort': {'_id': 1}}])
+    print('Month |  Carrier  | Number of Cancellations')
+    print('-------------------------------------------')
+    for result in results:
+        if result['_id'] is not None:
+            print("%-6d|%6s   |%13d" % (result['_id'], result['carrier'], result['count'] ))
 
 mainPrompt()
